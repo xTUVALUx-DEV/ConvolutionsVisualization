@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sketch</title>
+
+    <link rel="stylesheet" type="text/css" href="style.css">
+
+    <script src="libraries/p5.min.js"></script>
+
+
+  </head>
+
+  <body>
+    <script src="sketch.js"></script>
+    <script src="storage.js"></script>
+
+    <div class="left-content">
+      <input type="file" id="imageUpload" accept="image/*">
+
+
+
+        <label style="margin-top: 5em;" for="gridSize">Kernal Size:</label>
+        <select id="gridSize" onchange="createGrid(this.value);">
+          <option value="3">3x3</option>
+          <option value="5">5x5</option>
+          <option value="6">7x7</option>
+          <option value="6">9x9</option>
+
+        </select>
+      
+      <div id="gridContainer"></div>
+    </div>
+
+    <div class="right-content">
+      <input type="text" id="kernelName" accept="image/*">
+      <button onclick="saveCurrentKernel();">Save</button> 
+      <div id="kernelSaveContainter">
+
+      </div>
+
+    </div>
+
+
+      <script>
+        const gridSizeSelect = document.getElementById('gridSize');
+        const gridContainer = document.getElementById('gridContainer');
+    
+        function createGrid(size) {
+          const table = document.createElement('table');
+          for (let i = 0; i < size; i++) {
+            const row = document.createElement('tr');
+            for (let j = 0; j < size; j++) {
+              const cell = document.createElement('td');
+              cell.addEventListener('change', function (e) {
+                s2sketch.redraw();
+              });
+              const input = document.createElement('input');
+              input.type = 'number';
+              input.step = '0.05';
+              cell.appendChild(input);
+              row.appendChild(cell);
+            }
+            table.appendChild(row);
+          }
+          gridContainer.innerHTML = '';
+          gridContainer.appendChild(table);
+        }
+        // Initial grid creation
+        createGrid(gridSizeSelect.value);
+
+
+        function parse(str) {
+          return Function(`'use strict'; return (${str})`)()
+        }
+
+        function parseGrid(){
+          const gridTable = gridContainer.querySelector('table');
+          const rows = gridTable.querySelectorAll('tr');
+          const list = [];
+
+          for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const cells = row.querySelectorAll('td');
+            const rowData = [];
+
+            for (let j = 0; j < cells.length; j++) {
+              const cell = cells[j];
+              const input = cell.querySelector('input');
+              num = Number(input.value)
+              if(num == NaN) {
+                num = parse(input.value);
+              }
+              rowData.push(num);
+            }
+
+            list.push(rowData);
+          }
+          return list;
+        }
+
+        function createKernelByData(kernel) {
+          createGrid(kernel.length);
+          let table = document.getElementById("gridContainer").firstChild;
+
+          for (let i = 0; i < kernel.length; i++) {
+            for (let j = 0; j < kernel.length; j++) {
+              table.children[i].children[j].firstChild.value = kernel[i][j];
+              console.log(table.children[i].children[j]);
+            }
+          }
+          s2sketch.redraw();
+ 
+        }
+
+
+      </script>
+
+      <script>
+        const kernelSaveContainter = document.getElementById('kernelSaveContainter');
+        const kernelName = document.getElementById('kernelName');
+
+        loadKernelList();
+
+        var kernels = getKernelList();
+        for(let i = 0; i < kernels.length; i++) {
+          const kernelSave = document.createElement('a');
+          kernelSave.textContent = kernels[i]["name"];
+          kernelSave.kerneldata = kernels[i]["data"];
+          kernelSave.onclick = function () {
+            createKernelByData(this.kerneldata);
+          }
+          kernelSaveContainter.appendChild(kernelSave);
+        }
+
+        function saveCurrentKernel() {
+          saveKernel(kernelName.value, parseGrid());
+        }
+
+      </script>
+
+  </body>
+</html>
